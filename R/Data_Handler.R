@@ -7,6 +7,20 @@
 #   }
 #
 
-cleanup <- function(datalist){
+pickup <- function(data="data/FTSE100.Rdata"){
+  load(data)
+  return(NULL)
+}
+
+
+cleanup <- function(data){
   return(clean)
+}
+
+partition <- function(data){
+  return(part)
+}
+
+listgen <- function(){
+  return(list)
 }
