@@ -30,6 +30,8 @@ partition <- function(data){
   return(part)
 }
 
+#'@export
+
 listgen.allc <- function(b){
   v1 <- vector(length=choose(ncol(b),2))
   v2 <- vector(length=choose(ncol(b),2))
