@@ -1,5 +1,5 @@
 #'@export
-list.cointegration <- function(datalist,data,testfun){
+list.testrun <- function(datalist,data,testfun,min=TRUE,top=1){
 
   results <- rep(0,length(datalist))
   for(i in 1:length(datalist[[1]])){
@@ -7,7 +7,13 @@ list.cointegration <- function(datalist,data,testfun){
     sec2 <- data[,datalist[[2]][i]]
     results[i] <- testfun(sec1,sec2)
   }
-  return(list(datalist[[1]],datalist[[2]],results))
+  res <- data.frame(
+    Sec1 = datalist[[1]],
+    Sec2 = datalist[[2]],
+    val = results
+  )
+  ressort <- res[with(res, order(val)),]
+  return(ressort)
 }
 
 
@@ -21,6 +27,7 @@ euclidean <- function(sec1,sec2){
   return(sumsq)
 }
 
+#'@export
 
 johansen <- function(sec1,sec2){
 

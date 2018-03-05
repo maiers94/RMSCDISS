@@ -7,11 +7,14 @@
 #   }
 #
 
+#'@export
+
 pickup <- function(data="data/FTSE100.Rdata"){
   load(data)
   return(NULL)
 }
 
+#'@export
 price2ret <- function(data){
   it <- ncol(data)
   output <- matrix(nrow=nrow(data),ncol=it)
