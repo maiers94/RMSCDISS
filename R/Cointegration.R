@@ -1,11 +1,16 @@
 #'@export
+#'@import progress
 list.testrun <- function(datalist,data,testfun,decrease=FALSE,...){
-  results <- rep(0,length(datalist))
+  results <- rep(0,length(datalist[[1]]))
+  pb <- progress_bar$new(total = length(datalist[[1]]))
+
+    pb$tick()
+
   for(i in 1:length(datalist[[1]])){
     sec1 <- data[,datalist[[1]][i]]
     sec2 <- data[,datalist[[2]][i]]
     results[i] <- testfun(sec1,sec2,...)
-    print((i/length(datalist[[1]])))
+    pb$tick()
   }
   res <- data.frame(
     Sec1 = datalist[[1]],
@@ -42,7 +47,10 @@ adf <- function(sec1,sec2,...){
 #'@export
 #'@import urca
 
-johansen <- function(sec1,sec2){
+johansen <- function(sec1,sec2,...){
+  mod <- data.frame(sec1, sec2)
+  xm <- ca.jo(mod, type="trace", K=2, ecdet="none", spec="longrun")
+  metric <- as.numeric(xm@teststat[2])
 
   return(metric)
 }
