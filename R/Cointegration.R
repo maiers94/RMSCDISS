@@ -34,6 +34,7 @@ euclidean <- function(sec1,sec2){
 
 #'@export
 #'@import tseries
+#'@import stats
 adf <- function(sec1,sec2,...){
   mod <- lm(sec1~sec2)
   xm <- adf.test(mod$residuals)

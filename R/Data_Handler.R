@@ -27,7 +27,7 @@ price2ret <- function(data){
 
 
 partition <- function(data){
-  return(part)
+  return(NULL)
 }
 
 #'@export
