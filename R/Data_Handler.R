@@ -7,6 +7,7 @@
 #   }
 #
 
+
 #'@export
 
 pickup <- function(data="data/FTSE100.Rdata"){
@@ -15,20 +16,22 @@ pickup <- function(data="data/FTSE100.Rdata"){
 }
 
 #'@export
-price2ret <- function(data){
+price2ret <- function(data,sort=FALSE){
   it <- ncol(data)
   output <- matrix(nrow=nrow(data),ncol=it)
   for(i in 1:it){
-    base <- as.numeric(data[1,i])
+    if(sort==FALSE){
+      base <- as.numeric(data[1,i])
+    }
+    else{
+      base<-1
+    }
     output[,i] <- as.numeric(as.vector(data[,i]))/base
   }
   return(output)
 }
 
 
-partition <- function(data){
-  return(NULL)
-}
 
 #'@export
 

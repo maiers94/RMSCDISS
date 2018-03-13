@@ -1,6 +1,15 @@
+# DATA: 2000-2010  <->  a[1:2871,]
+# DATA: 2000-2010  <->  a[2872:4696,]
+
+
+
 #'@export
 #'@import progress
-list.testrun <- function(datalist,data,testfun,decrease=FALSE,...){
+findpairs <- function(datalist,data,testfun,...){
+  decrease <- FALSE
+  if(as.character(substitute(testfun))=="johansen"){
+    decrease <- TRUE
+  }
   results <- rep(0,length(datalist[[1]]))
   pb <- progress_bar$new(total = length(datalist[[1]]))
 
@@ -20,6 +29,7 @@ list.testrun <- function(datalist,data,testfun,decrease=FALSE,...){
   ressort <- res[with(res, order(val,decreasing = decrease)),]
   return(ressort)
 }
+
 
 
 #'@export

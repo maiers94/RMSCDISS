@@ -2,11 +2,12 @@
 
 export(adf)
 export(euclidean)
+export(findpairs)
 export(johansen)
-export(list.testrun)
 export(listgen.allc)
 export(pickup)
 export(price2ret)
+export(trade.pairs)
 import(progress)
 import(stats)
 import(tseries)
