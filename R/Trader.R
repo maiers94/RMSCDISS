@@ -1,5 +1,5 @@
 #'@export
-trade.pairs <- function(data,testfun,datalist="default",top=10,tradestart=2872,normalise=TRUE,...){
+trade.pairs <- function(data,testfun,scale=1,datalist="default",top=10,tradestart=2872,normalise=TRUE,...){
   #first get metric and find pairs
   #find pairs
   data <- price2ret(data,sort=TRUE)
@@ -22,10 +22,9 @@ trade.pairs <- function(data,testfun,datalist="default",top=10,tradestart=2872,n
     sec1 <- ndata[1:(tradestart-1),pairslist[i,1]]
     sec2 <- ndata[1:(tradestart-1),pairslist[i,2]]
     diff <- sec1-sec2
-    plot(diff)
-    std[i] <- 2*sd(diff)
+
+    std[i] <- scale*sd(diff)
   }
-  print(std)
 
   #Trade securities for remainder of period:
   #create position matrix
@@ -72,5 +71,47 @@ trade.pairs <- function(data,testfun,datalist="default",top=10,tradestart=2872,n
   }
   #ensure all positions are closed on the last day
   pos[(lastday-tradestart+2),] <- rep(0,top)
-  return(pos)
+  returns <- returncalc(data[tradestart:lastday,],pairslist[1:top,],pos)
+
+  return(list(pos,returns))
+}
+
+returncalc <- function(data,datalist,pos){
+  traderet <- matrix(data = 0, nrow=nrow(data), ncol = nrow(datalist))
+  prevpos <- pos[1,]
+  #vector of zeros, to store open positions
+  open <- prevpos
+  for(i in 1:length(data[,1])){
+    curpos <- pos[i+1,]
+    for(k in 1:length(curpos)){
+      if(curpos[k] != 0 && open[k] == 0){
+        #open new position if pos changes and currently none open
+        open[k] <- sign(curpos[k])*i #save direction and day of trade
+      }
+
+      if(curpos[k] == 0 && open[k] != 0){
+        #close position if need be and compute returns
+        opdate <- abs(open[k])
+        dir <- sign(open[k])
+        print(i)
+        print(open)
+        if(dir == 1){
+          #since sec1 > sec2, short sec 1
+          shortsec <- data[,datalist[k,1]]
+          longsec <- data[,datalist[k,2]]
+        }
+        else if(dir == -1){
+          shortsec <- data[,datalist[k,2]]
+          longsec <- data[,datalist[k,1]]
+        }
+        shortlogret <- log(shortsec[opdate]) - log(shortsec[k])
+        longlogret <- log(longsec[k]) - log(longsec[opdate])
+        traderet[i,k] <- longlogret + shortlogret
+        open[k] <- 0
+      }
+    }
+
+    prevpos <- curpos
+  }
+  return(traderet)
 }
