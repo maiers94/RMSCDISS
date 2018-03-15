@@ -5,21 +5,24 @@
 
 #'@export
 #'@import progress
-findpairs <- function(datalist,data,testfun,...){
+findpairs <- function(datalist,data,testfun,silent=FALSE,...){
   decrease <- FALSE
   if(as.character(substitute(testfun))=="johansen"){
     decrease <- TRUE
   }
   results <- rep(0,length(datalist[[1]]))
-  pb <- progress_bar$new(total = length(datalist[[1]]))
-
+  if(silent==FALSE){
+    pb <- progress_bar$new(total = length(datalist[[1]]))
     pb$tick()
+  }
 
   for(i in 1:length(datalist[[1]])){
     sec1 <- data[,datalist[[1]][i]]
     sec2 <- data[,datalist[[2]][i]]
     results[i] <- testfun(sec1,sec2,...)
-    pb$tick()
+    if(silent==FALSE){
+      pb$tick()
+    }
   }
   res <- data.frame(
     Sec1 = datalist[[1]],

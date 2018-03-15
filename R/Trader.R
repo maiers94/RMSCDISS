@@ -1,5 +1,5 @@
 #'@export
-trade.pairs <- function(data,testfun,scale=1,datalist="default",top=10,tradestart=2872,normalise=TRUE,...){
+trade.pairs <- function(data,testfun,scale=1,datalist="default",top=10,tradestart=2872,normalise=TRUE,silent=FALSE,...){
   #first get metric and find pairs
   #find pairs
   data <- price2ret(data,sort=TRUE)
@@ -9,10 +9,10 @@ trade.pairs <- function(data,testfun,scale=1,datalist="default",top=10,tradestar
     datalist <- listgen.allc(data)
   }
   if(normalise==TRUE){
-    pairslist <- findpairs(datalist,ndata[1:(tradestart-1),],testfun,...)
+    pairslist <- findpairs(datalist,ndata[1:(tradestart-1),],testfun,silent=silent,...)
   }
   else{
-    pairslist <- findpairs(datalist,data[1:(tradestart-1),],testfun,...)
+    pairslist <- findpairs(datalist,data[1:(tradestart-1),],testfun,silent=silent,...)
   }
 
 
@@ -93,8 +93,6 @@ returncalc <- function(data,datalist,pos){
         #close position if need be and compute returns
         opdate <- abs(open[k])
         dir <- sign(open[k])
-        print(i)
-        print(open)
         if(dir == 1){
           #since sec1 > sec2, short sec 1
           shortsec <- data[,datalist[k,1]]
@@ -114,4 +112,73 @@ returncalc <- function(data,datalist,pos){
     prevpos <- curpos
   }
   return(traderet)
+}
+
+
+#'@export
+vary.param <- function(j,data,testfun,reps=50,jump=1/25){
+  pb <- progress_bar$new(total = reps)
+  posi <- trade.pairs(data,testfun,scale=(1/40),silent=TRUE)
+  plot(1,compound.returns(posi,j),xlim=c(1,reps),ylim=c(-1,2),pch=16,xlab=NA, ylab=NA)
+  lines(x=c(0,reps),y=c(0,0),col="red")
+  not <- vector(length = reps)
+  not[1] <- sum(posi[[2]][,j] !=0)
+  pb$tick()
+
+  for(i in 2:reps){
+    k <- i/40
+    posi <- trade.pairs(data,testfun,scale=k,silent=TRUE)
+    points(i,compound.returns(posi,j),pch=16)
+    not[i] <- sum(posi[[2]][,j] !=0)
+    pb$tick()
+  }
+  par(new = T)
+  plot(x = seq(1,reps), y = not, type = "l", axes=F, xlab=NA, ylab=NA)
+  axis(side = 4)
+
+  return(NULL)
+}
+
+
+
+#'@export
+compound.returns <- function(mat,sec){
+  returns <- mat [[2]][,sec]
+  returns <- returns[returns != 0]
+  compound <- 1
+  for(i in 1:length(returns)){
+    compound <- compound*(1+returns[i])
+  }
+  return(compound - 1)
+}
+
+
+
+
+compound.returns.old <- function(mat,sec){
+  trades <- mat[[1]][,sec]
+  returns <- mat [[2]][,sec]
+  returns <- returns[returns != 0]
+  times <- vector(length=sum(returns!=0))
+  positions <- vector(length=sum(returns!=0))
+  count <- 0
+  index <- 1
+  for(i in 2:length(trades)){
+    if(trades[i] == 0 && trades[i-1] != 0){
+      times[index] <- count
+      positions[index] <- trades[i-1]
+      index <- index + 1
+      count <- 0
+    }
+    else{
+      count <- count + 1
+    }
+  }
+  compound <- 1
+  for(i in 1:length(times)){
+    if(positions[i] != 0){
+      compound <- compound*(1+returns[i])
+    }
+  }
+  return(compound - 1)
 }
