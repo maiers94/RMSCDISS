@@ -76,6 +76,24 @@ trade.pairs <- function(data,testfun,scale=1,datalist="default",top=10,tradestar
   return(list(pos,returns))
 }
 
+#'@export
+output.pairs <- function(data,testfun,scale=1,datalist="default",top=10,tradestart=2872,normalise=TRUE,silent=FALSE,...){
+  #find pairs
+  data <- price2ret(data,sort=TRUE)
+  ndata <- price2ret(data)
+  lastday <- length(data[,1])
+  if(datalist == "default"){
+    datalist <- listgen.allc(data)
+  }
+  if(normalise==TRUE){
+    pairslist <- findpairs(datalist,ndata[1:(tradestart-1),],testfun,silent=silent,...)
+  }
+  else{
+    pairslist <- findpairs(datalist,data[1:(tradestart-1),],testfun,silent=silent,...)
+  }
+  return(pairslist)
+}
+
 returncalc <- function(data,datalist,pos){
   traderet <- matrix(data = 0, nrow=nrow(data), ncol = nrow(datalist))
   prevpos <- pos[1,]
@@ -118,15 +136,15 @@ returncalc <- function(data,datalist,pos){
 #'@export
 vary.param <- function(j,data,testfun,reps=50,jump=1/25){
   pb <- progress_bar$new(total = reps)
-  posi <- trade.pairs(data,testfun,scale=(1/40),silent=TRUE)
-  plot(1,compound.returns(posi,j),xlim=c(1,reps),ylim=c(-1,2),pch=16,xlab=NA, ylab=NA)
+  posi <- trade.pairs(data,testfun,scale=jump,silent=TRUE)
+  plot(1,compound.returns(posi,j),xlim=c(1,reps),ylim=c(-1,5),pch=16,xlab=NA, ylab=NA)
   lines(x=c(0,reps),y=c(0,0),col="red")
   not <- vector(length = reps)
   not[1] <- sum(posi[[2]][,j] !=0)
   pb$tick()
 
   for(i in 2:reps){
-    k <- i/40
+    k <- i*jump
     posi <- trade.pairs(data,testfun,scale=k,silent=TRUE)
     points(i,compound.returns(posi,j),pch=16)
     not[i] <- sum(posi[[2]][,j] !=0)

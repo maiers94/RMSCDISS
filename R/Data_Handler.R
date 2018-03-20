@@ -7,6 +7,13 @@
 #   }
 #
 
+####### Backtesting - Campbell, Hardy
+#70/30 split
+#Variance of Returns - Sharpe Ratio
+#Drawdown - max fall acceptable
+#Sortino Ratio / CALMAR ratio (included here)
+#manipulation proof performance measure
+
 
 #'@export
 
