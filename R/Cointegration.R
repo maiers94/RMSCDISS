@@ -7,7 +7,7 @@
 #'@import progress
 findpairs <- function(datalist,data,testfun,silent=FALSE,...){
   decrease <- FALSE
-  if(as.character(substitute(testfun))=="johansen"){
+  if(identical(testfun,johansen)){
     decrease <- TRUE
   }
   results <- rep(0,length(datalist[[1]]))
@@ -63,8 +63,8 @@ adf <- function(sec1,sec2,...){
 
 johansen <- function(sec1,sec2,...){
   mod <- data.frame(sec1, sec2)
-  xm <- ca.jo(mod, type="trace", K=2, ecdet="none", spec="longrun")
-  metric <- as.numeric(xm@teststat[2])
+  xm <- ca.jo(mod, type="trace", K=2, ecdet="none", spec="longrun",...)
+  metric <- as.numeric(xm@teststat[length(xm@teststat)]-xm@cval[dim(xm@cval)[1],dim(xm@cval)[2]])
 
   return(metric)
 }

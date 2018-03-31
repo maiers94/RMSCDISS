@@ -77,7 +77,7 @@ trade.pairs <- function(data,testfun,scale=1,datalist="default",top=10,tradestar
 }
 
 #'@export
-output.pairs <- function(data,testfun,scale=1,datalist="default",top=10,tradestart=2872,normalise=TRUE,silent=FALSE,...){
+output.pairs <- function(data,testfun,datalist="default",top=10,tradestart=2872,normalise=TRUE,silent=FALSE,...){
   #find pairs
   data <- price2ret(data,sort=TRUE)
   ndata <- price2ret(data)
@@ -91,7 +91,7 @@ output.pairs <- function(data,testfun,scale=1,datalist="default",top=10,tradesta
   else{
     pairslist <- findpairs(datalist,data[1:(tradestart-1),],testfun,silent=silent,...)
   }
-  return(pairslist)
+  return(pairslist[1:top,])
 }
 
 returncalc <- function(data,datalist,pos){
@@ -168,6 +168,23 @@ compound.returns <- function(mat,sec){
     compound <- compound*(1+returns[i])
   }
   return(compound - 1)
+}
+
+
+
+#'@export
+compare.lists <- function(list1,list2){
+  matches <- list()
+  counter <- 0
+  for(i in 1:length(list1[,1])){
+    for(j in 1:length(list2[,1])){
+      if(list1[i,1]==list2[j,1] && list1[i,2]==list2[j,2]){
+        counter <- counter + 1
+        matches[[counter]] <- c(list1[i,1],list1[i,2])
+      }
+    }
+  }
+  return(matches)
 }
 
 
