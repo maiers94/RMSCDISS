@@ -1,11 +1,11 @@
 #'@export
-trade.pairs <- function(data,testfun,scale=1,datalist="default",top=10,tradestart=2872,normalise=TRUE,silent=FALSE,...){
+trade.pairs <- function(data,testfun,scale=1,datalist="default",top=10,tradestart=3393,normalise=TRUE,silent=FALSE,min = 1,...){
   #first get metric and find pairs
   #find pairs
   data <- price2ret(data,sort=TRUE)
   ndata <- price2ret(data)
   lastday <- length(data[,1])
-  if(datalist == "default"){
+  if(datalist[[1]][1] == "default"){
     datalist <- listgen.allc(data)
   }
   if(normalise==TRUE){
@@ -14,7 +14,7 @@ trade.pairs <- function(data,testfun,scale=1,datalist="default",top=10,tradestar
   else{
     pairslist <- findpairs(datalist,data[1:(tradestart-1),],testfun,silent=silent,...)
   }
-
+  print(pairslist)
 
   #Find standard deviations for the top pairs:
   std <- vector(length=top)
@@ -35,13 +35,13 @@ trade.pairs <- function(data,testfun,scale=1,datalist="default",top=10,tradestar
     daily <- ndata[i,]
     prevdailypos <- pos[(i-tradestart+1),]
     dailypos <- rep(NA,length(prevdailypos))
-    for(k in 1:top){
+    for(k in min:top){
       #for each security on the day
       dev <- std[k]
       pairdiff <- daily[pairslist[k,1]]-daily[pairslist[k,2]]
 
       if(prevdailypos[k] != 0){
-        #if poition was open
+        #if position was open
         prevpairdiff <- prevdaily[pairslist[k,1]]-prevdaily[pairslist[k,2]]
         if(sign(pairdiff) == sign(prevpairdiff)){
           #keep position open
@@ -71,13 +71,14 @@ trade.pairs <- function(data,testfun,scale=1,datalist="default",top=10,tradestar
   }
   #ensure all positions are closed on the last day
   pos[(lastday-tradestart+2),] <- rep(0,top)
-  returns <- returncalc(data[tradestart:lastday,],pairslist[1:top,],pos)
 
+  returns <- returncalc(data[tradestart:lastday,],pairslist[min:top,],pos,min)
+  #print(returns)
   return(list(pos,returns))
 }
 
 #'@export
-output.pairs <- function(data,testfun,datalist="default",top=10,tradestart=2872,normalise=TRUE,silent=FALSE,...){
+output.pairs <- function(data,testfun,datalist="default",top=10,tradestart=3393,normalise=TRUE,silent=FALSE,...){
   #find pairs
   data <- price2ret(data,sort=TRUE)
   ndata <- price2ret(data)
@@ -94,35 +95,42 @@ output.pairs <- function(data,testfun,datalist="default",top=10,tradestart=2872,
   return(pairslist[1:top,])
 }
 
-returncalc <- function(data,datalist,pos){
-  traderet <- matrix(data = 0, nrow=nrow(data), ncol = nrow(datalist))
+returncalc <- function(data,datalist,pos,min){
+  traderet <- matrix(data = 0, nrow=nrow(data), ncol = nrow(datalist)+min-1)
   prevpos <- pos[1,]
+
   #vector of zeros, to store open positions
   open <- prevpos
   for(i in 1:length(data[,1])){
     curpos <- pos[i+1,]
-    for(k in 1:length(curpos)){
+    for(k in min:length(curpos)){
+
       if(curpos[k] != 0 && open[k] == 0){
         #open new position if pos changes and currently none open
         open[k] <- sign(curpos[k])*i #save direction and day of trade
+
       }
 
       if(curpos[k] == 0 && open[k] != 0){
         #close position if need be and compute returns
+
         opdate <- abs(open[k])
         dir <- sign(open[k])
         if(dir == 1){
           #since sec1 > sec2, short sec 1
-          shortsec <- data[,datalist[k,1]]
-          longsec <- data[,datalist[k,2]]
+          shortsec <- data[,datalist[k-min+1,1]]
+          longsec <- data[,datalist[k-min+1,2]]
         }
         else if(dir == -1){
-          shortsec <- data[,datalist[k,2]]
-          longsec <- data[,datalist[k,1]]
+          shortsec <- data[,datalist[k-min+1,2]]
+          longsec <- data[,datalist[k-min+1,1]]
         }
-        shortlogret <- log(shortsec[opdate]) - log(shortsec[k])
-        longlogret <- log(longsec[k]) - log(longsec[opdate])
+        shortlogret <- log(shortsec[opdate]) - log(shortsec[i])
+
+        longlogret <- log(longsec[i]) - log(longsec[opdate])
+
         traderet[i,k] <- longlogret + shortlogret
+
         open[k] <- 0
       }
     }
@@ -136,8 +144,8 @@ returncalc <- function(data,datalist,pos){
 #'@export
 vary.param <- function(j,data,testfun,reps=50,jump=1/25){
   pb <- progress_bar$new(total = reps)
-  posi <- trade.pairs(data,testfun,scale=jump,silent=TRUE)
-  plot(1,compound.returns(posi,j),xlim=c(1,reps),ylim=c(-1,5),pch=16,xlab=NA, ylab=NA)
+  posi <- trade.pairs(data,testfun,scale=jump,silent=TRUE,top = j,min = j)
+  plot(1,compound.returns(posi,j),xlim=c(1,reps),ylim=c(-1,2),pch=16,xlab=NA, ylab=NA)
   lines(x=c(0,reps),y=c(0,0),col="red")
   not <- vector(length = reps)
   not[1] <- sum(posi[[2]][,j] !=0)
@@ -145,7 +153,7 @@ vary.param <- function(j,data,testfun,reps=50,jump=1/25){
 
   for(i in 2:reps){
     k <- i*jump
-    posi <- trade.pairs(data,testfun,scale=k,silent=TRUE)
+    posi <- trade.pairs(data,testfun,scale=k,silent=TRUE,top = j,min = j)
     points(i,compound.returns(posi,j),pch=16)
     not[i] <- sum(posi[[2]][,j] !=0)
     pb$tick()
@@ -161,13 +169,34 @@ vary.param <- function(j,data,testfun,reps=50,jump=1/25){
 
 #'@export
 compound.returns <- function(mat,sec){
-  returns <- mat [[2]][,sec]
+  returns <- mat[[2]][,sec]
   returns <- returns[returns != 0]
+  if(sum(returns) == 0){
+    return(0)
+  }
   compound <- 1
   for(i in 1:length(returns)){
     compound <- compound*(1+returns[i])
   }
+
   return(compound - 1)
+}
+
+#'@export
+summary.returns <- function(mat){
+  #average returns
+  n <- ncol(mat[[2]])
+  rets <- vector(length=n)
+  for(i in 1:n){
+    rets[i] <- compound.returns(mat,i)
+  }
+  avg <- sum(rets)/n
+  print("AVERAGE RETURN:")
+  print(avg)
+  #sd of retruns
+  print("STANDARD DEVIATION:")
+  print(sd(rets))
+  return(NULL)
 }
 
 
@@ -184,7 +213,12 @@ compare.lists <- function(list1,list2){
       }
     }
   }
-  return(matches)
+  matchesv <- matrix(nrow=length(matches),ncol=2)
+  for(i in 1:nrow(matchesv)){
+    matchesv[i,] <- matches[[i]]
+  }
+  matchesl <- list(matchesv[,1],matchesv[,2])
+  return(matchesl)
 }
 
 
