@@ -14,7 +14,7 @@ trade.pairs <- function(data,testfun,scale=1,datalist="default",top=10,tradestar
   else{
     pairslist <- findpairs(datalist,data[1:(tradestart-1),],testfun,silent=silent,...)
   }
-  print(pairslist)
+
 
   #Find standard deviations for the top pairs:
   std <- vector(length=top)
@@ -184,11 +184,14 @@ compound.returns <- function(mat,sec){
 
 #'@export
 summary.returns <- function(mat){
-  #average returns
-  n <- ncol(mat[[2]])
+  #average daily returns on open positions
+  n <- ncol(mat[[1]])
   rets <- vector(length=n)
   for(i in 1:n){
+    #1304 trading days and 60 months in the period, to give monthly returns
+    #rets[i] <- (((compound.returns(mat,i)+1)^(1/sum(mat[[1]][,i]!=0)))^(1304/60))-1
     rets[i] <- compound.returns(mat,i)
+
   }
   avg <- sum(rets)/n
   print("AVERAGE RETURN:")
@@ -196,7 +199,8 @@ summary.returns <- function(mat){
   #sd of retruns
   print("STANDARD DEVIATION:")
   print(sd(rets))
-  return(NULL)
+  hist(rets)
+  return(rets)
 }
 
 
