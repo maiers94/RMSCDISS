@@ -1,5 +1,5 @@
 #'@export
-trade.pairs <- function(data,testfun,scale=1,datalist="default",top=10,tradestart=3393,normalise=TRUE,silent=FALSE,min = 1,...){
+trade.pairs <- function(data,testfun,scale=1,datalist="default",top=10,tradestart=3393,normalise=TRUE,silent=FALSE,min = 1,vary.param=FALSE,...){
   #first get metric and find pairs
   #find pairs
   data <- price2ret(data,sort=TRUE)
@@ -8,23 +8,41 @@ trade.pairs <- function(data,testfun,scale=1,datalist="default",top=10,tradestar
   if(datalist[[1]][1] == "default"){
     datalist <- listgen.allc(data)
   }
-  if(normalise==TRUE){
-    pairslist <- findpairs(datalist,ndata[1:(tradestart-1),],testfun,silent=silent,...)
+  if(vary.param==FALSE){
+    if(normalise==TRUE){
+      pairslist <- findpairs(datalist,ndata[1:(tradestart-1),],testfun,silent=silent,...)
+    }
+    else{
+      pairslist <- findpairs(datalist,data[1:(tradestart-1),],testfun,silent=silent,...)
+    }
+    #Find standard deviations for the top pairs:
+    std <- vector(length=top)
+    for(i in 1:top){
+      sec1 <- ndata[1:(tradestart-1),pairslist[i,1]]
+      sec2 <- ndata[1:(tradestart-1),pairslist[i,2]]
+      diff <- sec1-sec2
+
+      std[i] <- scale*sd(diff)
+    }
   }
   else{
-    pairslist <- findpairs(datalist,data[1:(tradestart-1),],testfun,silent=silent,...)
+    if(normalise==TRUE){
+      pairslist <- findpairs(datalist,ndata,testfun,silent=silent,...)
+    }
+    else{
+      pairslist <- findpairs(datalist,data,testfun,silent=silent,...)
+    }
+    #Find standard deviations for the top pairs:
+    std <- vector(length=top)
+    for(i in 1:top){
+      sec1 <- ndata[,pairslist[i,1]]
+      sec2 <- ndata[,pairslist[i,2]]
+      diff <- sec1-sec2
+
+      std[i] <- scale*sd(diff)
+    }
   }
 
-
-  #Find standard deviations for the top pairs:
-  std <- vector(length=top)
-  for(i in 1:top){
-    sec1 <- ndata[1:(tradestart-1),pairslist[i,1]]
-    sec2 <- ndata[1:(tradestart-1),pairslist[i,2]]
-    diff <- sec1-sec2
-
-    std[i] <- scale*sd(diff)
-  }
 
   #Trade securities for remainder of period:
   #create position matrix
@@ -258,10 +276,11 @@ compound.returns.interest <- function(mat,sec,int){
   return(rets - 1)
 }
 
+#'@export
 optimise.param <- function(tops=25,data,reps,start,jump){
   param <- vector(length=tops)
   for(i in 1:tops){
-    param[i] <- max(vary.param(a[1:3392,],testfun=euclidian,reps = reps, start= start,jump=jump))
+    param[i] <- max(vary.param(data[1:3392,],testfun=euclidian,reps = reps, start= start,jump=jump))
   }
   return(param)
 }
