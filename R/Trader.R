@@ -1,5 +1,11 @@
 #'@export
 trade.pairs <- function(data,testfun,scale=1,datalist="default",top=10,tradestart=3393,normalise=TRUE,silent=FALSE,min = 1,vary.param=FALSE,...){
+  #setup
+
+  if(length(scale)==1){
+    scale <- rep(scale,top)
+  }
+
   #first get metric and find pairs
   #find pairs
   data <- price2ret(data,sort=TRUE)
@@ -22,7 +28,7 @@ trade.pairs <- function(data,testfun,scale=1,datalist="default",top=10,tradestar
       sec2 <- ndata[1:(tradestart-1),pairslist[i,2]]
       diff <- sec1-sec2
 
-      std[i] <- scale*sd(diff)
+      std[i] <- scale[i]*sd(diff)
     }
   }
   else{
@@ -39,7 +45,7 @@ trade.pairs <- function(data,testfun,scale=1,datalist="default",top=10,tradestar
       sec2 <- ndata[,pairslist[i,2]]
       diff <- sec1-sec2
 
-      std[i] <- scale*sd(diff)
+      std[i] <- scale[i]*sd(diff)
     }
   }
 
@@ -160,13 +166,18 @@ returncalc <- function(data,datalist,pos,min){
 
 
 #'@export
-vary.param <- function(j,data,testfun=euclidian,reps=50,jump=1/25,start=1){
+vary.param <- function(j,data,testfun=euclidian,reps=50,jump=1/25,start=1,pre=TRUE){
   pb <- progress_bar$new(total = reps)
   param <- vector(length=reps)
-  posi <- trade.pairs(data,testfun,scale=(jump+start),silent=TRUE,top = j,min = j,tradestart=1)
+  if(pre==TRUE){
+    posi <- trade.pairs(data,testfun,scale=(jump+start),silent=TRUE,top = j,min = j,tradestart=1,vary.param = TRUE)
+  }
+  else{
+    posi <- trade.pairs(data,testfun,scale=(jump+start),silent=TRUE,top = j,min = j)
+  }
   y <- compound.returns(posi,j)
   param[1]<-y
-  plot(1,y,xlim=c(1,reps),ylim=c(-1,2),pch=16,xlab=NA, ylab=NA)
+  plot(1,y,xlim=c(1,reps),ylim=c(-1,6),pch=16,xlab=NA, ylab=NA)
   lines(x=c(0,reps),y=c(0,0),col="red")
   not <- vector(length = reps)
   not[1] <- sum(posi[[2]][,j] !=0)
@@ -174,7 +185,12 @@ vary.param <- function(j,data,testfun=euclidian,reps=50,jump=1/25,start=1){
 
   for(i in 2:reps){
     k <- (i*jump)+start
-    posi <- trade.pairs(data,testfun,scale=k,silent=TRUE,top = j,min = j,tradestart=1)
+    if(pre==TRUE){
+      posi <- trade.pairs(data,testfun,scale=k,silent=TRUE,top = j,min = j,tradestart=1,vary.param = TRUE)
+    }
+    else{
+      posi <- trade.pairs(data,testfun,scale=k,silent=TRUE,top = j,min = j)
+    }
     y <- compound.returns(posi,j)
     param[i] <- y
     points(i,y,pch=16)
@@ -280,7 +296,8 @@ compound.returns.interest <- function(mat,sec,int){
 optimise.param <- function(tops=25,data,reps,start,jump){
   param <- vector(length=tops)
   for(i in 1:tops){
-    param[i] <- max(vary.param(i,data[1:3392,],testfun=euclidian,reps = reps, start= start,jump=jump))
+    temp <- vary.param(i,data[1:3392,],testfun=euclidean,reps = reps, start= start,jump=jump)
+    param[i] <- (which.max(temp)*jump)+start
   }
   return(param)
 }
