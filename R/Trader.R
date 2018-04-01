@@ -280,7 +280,7 @@ compound.returns.interest <- function(mat,sec,int){
 optimise.param <- function(tops=25,data,reps,start,jump){
   param <- vector(length=tops)
   for(i in 1:tops){
-    param[i] <- max(vary.param(data[1:3392,],testfun=euclidian,reps = reps, start= start,jump=jump))
+    param[i] <- max(vary.param(i,data[1:3392,],testfun=euclidian,reps = reps, start= start,jump=jump))
   }
   return(param)
 }
