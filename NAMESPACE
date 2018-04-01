@@ -3,6 +3,7 @@
 export(adf)
 export(compare.lists)
 export(compound.returns)
+export(compound.returns.interest)
 export(euclidean)
 export(findpairs)
 export(johansen)

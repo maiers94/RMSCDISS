@@ -142,19 +142,24 @@ returncalc <- function(data,datalist,pos,min){
 
 
 #'@export
-vary.param <- function(j,data,testfun,reps=50,jump=1/25){
+vary.param <- function(j,data,testfun=euclidian,reps=50,jump=1/25,start=1){
   pb <- progress_bar$new(total = reps)
-  posi <- trade.pairs(data,testfun,scale=jump,silent=TRUE,top = j,min = j)
-  plot(1,compound.returns(posi,j),xlim=c(1,reps),ylim=c(-1,2),pch=16,xlab=NA, ylab=NA)
+  param <- vector(length=reps)
+  posi <- trade.pairs(data,testfun,scale=(jump+start),silent=TRUE,top = j,min = j,tradestart=1)
+  y <- compound.returns(posi,j)
+  param[1]<-y
+  plot(1,y,xlim=c(1,reps),ylim=c(-1,2),pch=16,xlab=NA, ylab=NA)
   lines(x=c(0,reps),y=c(0,0),col="red")
   not <- vector(length = reps)
   not[1] <- sum(posi[[2]][,j] !=0)
   pb$tick()
 
   for(i in 2:reps){
-    k <- i*jump
-    posi <- trade.pairs(data,testfun,scale=k,silent=TRUE,top = j,min = j)
-    points(i,compound.returns(posi,j),pch=16)
+    k <- (i*jump)+start
+    posi <- trade.pairs(data,testfun,scale=k,silent=TRUE,top = j,min = j,tradestart=1)
+    y <- compound.returns(posi,j)
+    param[i] <- y
+    points(i,y,pch=16)
     not[i] <- sum(posi[[2]][,j] !=0)
     pb$tick()
   }
@@ -162,7 +167,7 @@ vary.param <- function(j,data,testfun,reps=50,jump=1/25){
   plot(x = seq(1,reps), y = not, type = "l", axes=F, xlab=NA, ylab=NA)
   axis(side = 4)
 
-  return(NULL)
+  return(param)
 }
 
 
@@ -183,14 +188,12 @@ compound.returns <- function(mat,sec){
 }
 
 #'@export
-summary.returns <- function(mat){
+summary.returns <- function(mat,interest){
   #average daily returns on open positions
   n <- ncol(mat[[1]])
   rets <- vector(length=n)
   for(i in 1:n){
-    #1304 trading days and 60 months in the period, to give monthly returns
-    #rets[i] <- (((compound.returns(mat,i)+1)^(1/sum(mat[[1]][,i]!=0)))^(1304/60))-1
-    rets[i] <- compound.returns(mat,i)
+    rets[i] <- compound.returns.interest(mat,i,interest)
 
   }
   avg <- sum(rets)/n
@@ -199,6 +202,8 @@ summary.returns <- function(mat){
   #sd of retruns
   print("STANDARD DEVIATION:")
   print(sd(rets))
+  print("SHARPE RATIO:")
+  print((avg-0.005)/sd(rets))
   hist(rets)
   return(rets)
 }
@@ -225,8 +230,44 @@ compare.lists <- function(list1,list2){
   return(matchesl)
 }
 
+#'@export
+compound.returns.interest <- function(mat,sec,int){
+  n <- length(mat[[2]][,1])
+  k <- sec
+  rets <- 1
+  curpos <- 0
+  for(i in 1:n){
+    if(curpos != mat[[1]][(i+1),k]){
+      if(mat[[1]][(i+1),k] == 0){
+        traderet <- mat[[2]][(i),k]
+        rets <- rets*(1 + traderet)
+
+      }
+      curpos <- mat[[1]][(i+1),k]
+
+    }
+    else if(curpos == 0){
+      rets <- rets*((int[i]/100) + 1) ^ (1/250)
 
 
+    }
+
+
+  }
+
+  return(rets - 1)
+}
+
+optimise.param <- function(tops=25,data,reps,start,jump){
+  param <- vector(length=tops)
+  for(i in 1:tops){
+    param[i] <- max(vary.param(a[1:3392,],testfun=euclidian,reps = reps, start= start,jump=jump))
+  }
+  return(param)
+}
+
+
+#####################################################################
 
 compound.returns.old <- function(mat,sec){
   trades <- mat[[1]][,sec]
