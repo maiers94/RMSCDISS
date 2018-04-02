@@ -222,14 +222,22 @@ compound.returns <- function(mat,sec){
 }
 
 #'@export
+#'@import tseries
 summary.returns <- function(mat,interest){
   #average daily returns on open positions
   n <- ncol(mat[[1]])
   rets <- vector(length=n)
   for(i in 1:n){
-    rets[i] <- compound.returns.interest(mat,i,interest)
-
+    rets[i] <- compound.returns.interest(mat,i,interest)[[1]]
   }
+  #######Manipulation Proof Measure
+
+
+
+
+
+
+  #################################
   avg <- sum(rets)/n
   print("AVERAGE RETURN:")
   print(avg)
@@ -238,6 +246,12 @@ summary.returns <- function(mat,interest){
   print(sd(rets))
   print("SHARPE RATIO:")
   print((avg-0.005)/sd(rets))
+  print("MAX DRAWDOWN:")
+  print(maxdrawdown(rets)$maxdrawdown)
+  print("CALMAR(whole period):")
+  print(avg/maxdrawdown(rets)$maxdrawdown)
+  print("SORTINO:")
+  print((avg-0.005)/sd(rets[rets<0]))
   hist(rets)
   return(rets)
 }
@@ -265,11 +279,12 @@ compare.lists <- function(list1,list2){
 }
 
 #'@export
-compound.returns.interest <- function(mat,sec,int){
+compound.returns.interest <- function(mat,sec,int,tradedays = 250){
   n <- length(mat[[2]][,1])
   k <- sec
   rets <- 1
   curpos <- 0
+  cont <- vector(length = n)
   for(i in 1:n){
     if(curpos != mat[[1]][(i+1),k]){
       if(mat[[1]][(i+1),k] == 0){
@@ -278,18 +293,17 @@ compound.returns.interest <- function(mat,sec,int){
 
       }
       curpos <- mat[[1]][(i+1),k]
-
     }
     else if(curpos == 0){
-      rets <- rets*((int[i]/100) + 1) ^ (1/250)
-
+      rets <- rets*((int[i]/100) + 1) ^ (1/tradedays)
+      cont[i] <- ((int[i]/100) + 1) ^ (1/tradedays)
 
     }
 
 
   }
 
-  return(rets - 1)
+  return(list((rets - 1),cont))
 }
 
 #'@export
