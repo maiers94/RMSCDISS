@@ -223,15 +223,25 @@ compound.returns <- function(mat,sec){
 
 #'@export
 #'@import tseries
-summary.returns <- function(mat,interest){
+summary.returns <- function(mat,interest,tradedays = 250){
   #average daily returns on open positions
   n <- ncol(mat[[1]])
   rets <- vector(length=n)
+  theta <- vector(length=n)
   for(i in 1:n){
-    rets[i] <- compound.returns.interest(mat,i,interest)[[1]]
-  }
-  #######Manipulation Proof Measure
+    temp <- compound.returns.interest(mat,i,interest,tradedays)
+    rets[i] <- temp[[1]]
 
+    #######Manipulation Proof Measure########
+    k <- length(temp[[2]])
+    rho <- 3
+    s <- (1+temp[[2]])/((1+interest[i]/100) ^ (1/tradedays))
+    sp <- s^(1-rho)
+    spp <- log(sum(sp)/k)
+    theta[i] <- (1/(1-rho)) * spp *100
+  }
+
+  theta <- mean(theta)
 
 
 
@@ -252,6 +262,10 @@ summary.returns <- function(mat,interest){
   print(avg/maxdrawdown(rets)$maxdrawdown)
   print("SORTINO:")
   print((avg-0.005)/sd(rets[rets<0]))
+  print("AVG. MPPF (%, daily):")
+  print(theta)
+  print("#################")
+
   hist(rets)
   return(rets)
 }
@@ -285,7 +299,9 @@ compound.returns.interest <- function(mat,sec,int,tradedays = 250){
   rets <- 1
   curpos <- 0
   cont <- vector(length = n)
+  lag <- 0
   for(i in 1:n){
+    ############# - for total returns - #############
     if(curpos != mat[[1]][(i+1),k]){
       if(mat[[1]][(i+1),k] == 0){
         traderet <- mat[[2]][(i),k]
@@ -296,10 +312,20 @@ compound.returns.interest <- function(mat,sec,int,tradedays = 250){
     }
     else if(curpos == 0){
       rets <- rets*((int[i]/100) + 1) ^ (1/tradedays)
-      cont[i] <- ((int[i]/100) + 1) ^ (1/tradedays)
 
     }
+    ############# - for cont. returns - ################
+    if(mat[[1]][(i+1),k] == 0){
+      cont[i] <- ((((int[i]/100) + 1) ^ (1/tradedays)) - 1)
+      if(lag != 0){
+        cont[(i-lag):(i-1)] <- rep((((mat[[2]][i,k] + 1) ^ (1/lag)) - 1), lag)
 
+        lag <- 0
+      }
+    }
+    else if(mat[[1]][(i+1),k] != 0){
+      lag <- lag + 1
+    }
 
   }
 
