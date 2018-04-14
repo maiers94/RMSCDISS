@@ -311,12 +311,12 @@ compound.returns.interest <- function(mat,sec,int,tradedays = 261){
       curpos <- mat[[1]][(i+1),k]
     }
     else if(curpos == 0){
-      rets <- rets*((int[i]/100) + 1) ^ (1/tradedays)
+      rets <- (rets*(int[i]/(tradedays*100))+1)
 
     }
     ############# - for cont. returns - ################
     if(mat[[1]][(i+1),k] == 0){
-      cont[i] <- ((((int[i]/100) + 1) ^ (1/tradedays)) - 1)
+      cont[i] <- (int[i]/(tradedays*100))
       if(lag != 0){
         cont[(i-lag):(i-1)] <- rep((((mat[[2]][i,k] + 1) ^ (1/lag)) - 1), lag)
 
