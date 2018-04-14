@@ -223,7 +223,7 @@ compound.returns <- function(mat,sec){
 
 #'@export
 #'@import tseries
-summary.returns <- function(mat,interest,tradedays = 250){
+summary.returns <- function(mat,interest,tradedays = 261){
   #average daily returns on open positions
   n <- ncol(mat[[1]])
   rets <- vector(length=n)
@@ -255,13 +255,13 @@ summary.returns <- function(mat,interest,tradedays = 250){
   print("STANDARD DEVIATION:")
   print(sd(rets))
   print("SHARPE RATIO:")
-  print((avg-0.005)/sd(rets))
+  print((avg)/sd(rets))
   print("MAX DRAWDOWN:")
   print(maxdrawdown(rets)$maxdrawdown)
   print("CALMAR(whole period):")
   print(avg/maxdrawdown(rets)$maxdrawdown)
   print("SORTINO:")
-  print((avg-0.005)/sd(rets[rets<0]))
+  print((avg)/sd(rets[rets<0]))
   print("AVG. MPPF (%, daily):")
   print(theta)
   print("#################")
@@ -293,7 +293,7 @@ compare.lists <- function(list1,list2){
 }
 
 #'@export
-compound.returns.interest <- function(mat,sec,int,tradedays = 250){
+compound.returns.interest <- function(mat,sec,int,tradedays = 261){
   n <- length(mat[[2]][,1])
   k <- sec
   rets <- 1
