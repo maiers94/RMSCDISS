@@ -13,7 +13,8 @@
 #Drawdown - max fall acceptable
 #Sortino Ratio / CALMAR ratio (included here)
 #manipulation proof performance measure
-
+#significance tests (?)
+#47top
 
 #'@export
 
