@@ -166,7 +166,7 @@ returncalc <- function(data,datalist,pos,min){
 
 
 #'@export
-vary.param <- function(j,data,testfun=euclidian,reps=50,jump=1/25,start=1,pre=TRUE){
+vary.param <- function(j,data,testfun=euclidean,reps=50,jump=1/25,start=1,pre=TRUE){
   pb <- progress_bar$new(total = reps)
   param <- vector(length=reps)
   if(pre==TRUE){
@@ -224,7 +224,7 @@ compound.returns <- function(mat,sec){
 #'@export
 #'@import tseries
 #'@import graphics
-summary.returns <- function(mat,interest,tc = 0, tradedays = 261){
+summarise <- function(mat,interest,tc = 0, tradedays = 261){
   #average daily returns on open positions
   n <- ncol(mat[[1]])
   rets <- vector(length=n)
