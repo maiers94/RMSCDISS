@@ -1,7 +1,7 @@
 Package: RMSCDISS
 Type: Package
 Title: Pairs Trading - MSc Dissertation
-Version: 0.1.0
+Version: 1.0.0
 Author: Stephan Maier
 Maintainer: Stephan Maier <sm297@st-andrews.ac.uk>
 Description: Pairs trading simulator and Pairs finder for Econ MSc Dissertation.
