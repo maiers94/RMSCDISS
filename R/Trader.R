@@ -223,22 +223,32 @@ compound.returns <- function(mat,sec){
 
 #'@export
 #'@import tseries
-summary.returns <- function(mat,interest,tradedays = 261){
+#'@import graphics
+summary.returns <- function(mat,interest,tc = 0, tradedays = 261){
   #average daily returns on open positions
   n <- ncol(mat[[1]])
   rets <- vector(length=n)
   theta <- vector(length=n)
+  rho <- 2
   for(i in 1:n){
-    temp <- compound.returns.interest(mat,i,interest,tradedays)
+    temp <- compound.returns.interest(mat,i,interest,tc,tradedays)
     rets[i] <- temp[[1]]
 
     #######Manipulation Proof Measure########
     k <- length(temp[[2]])
-    rho <- 3
-    s <- (1+temp[[2]])/((1+interest[i]/100) ^ (1/tradedays))
-    sp <- s^(1-rho)
-    spp <- log(sum(sp)/k)
-    theta[i] <- (1/(1-rho)) * spp *100
+    s <- vector(length=k)
+    for(j in 1:k){
+      s[j] <- (1+temp[[2]][j])/((1+interest[j]/100) ^ (1/tradedays))
+      s[j] <- s[j]^(1-rho)
+      if(is.na(s[j])==T){
+        print(j)
+        print(i)
+        print(temp[[2]][j])
+        print(interest[j])
+      }
+    }
+    sp <- log(sum(s)/k)
+    theta[i] <- (1/((1-rho)*(1/tradedays))) * sp
   }
 
   theta <- mean(theta)
@@ -262,11 +272,14 @@ summary.returns <- function(mat,interest,tradedays = 261){
   print(avg/maxdrawdown(rets)$maxdrawdown)
   print("SORTINO:")
   print((avg)/sd(rets[rets<0]))
-  print("AVG. MPPF (%, daily):")
+  print("AVG. MPPF (annualised):")
   print(theta)
   print("#################")
+  print("No of Trades:")
+  print(sum(mat[[2]]!=0))
+  print("#################")
 
-  hist(rets)
+  #hist(rets)
   return(rets)
 }
 
@@ -293,7 +306,8 @@ compare.lists <- function(list1,list2){
 }
 
 #'@export
-compound.returns.interest <- function(mat,sec,int,tradedays = 261){
+compound.returns.interest <- function(mat,sec,int,tc,tradedays = 261){
+  tc <- tc / 100
   n <- length(mat[[2]][,1])
   k <- sec
   rets <- 1
@@ -305,20 +319,21 @@ compound.returns.interest <- function(mat,sec,int,tradedays = 261){
     if(curpos != mat[[1]][(i+1),k]){
       if(mat[[1]][(i+1),k] == 0){
         traderet <- mat[[2]][(i),k]
-        rets <- rets*(1 + traderet)
+        rets <- rets*(1 + traderet - tc)
+
 
       }
       curpos <- mat[[1]][(i+1),k]
     }
     else if(curpos == 0){
-      rets <- (rets*(int[i]/(tradedays*100))+1)
+      rets <- (rets*(int[i]/(tradedays*100)+1))
 
     }
     ############# - for cont. returns - ################
     if(mat[[1]][(i+1),k] == 0){
       cont[i] <- (int[i]/(tradedays*100))
       if(lag != 0){
-        cont[(i-lag):(i-1)] <- rep((((mat[[2]][i,k] + 1) ^ (1/lag)) - 1), lag)
+        cont[(i-lag):(i-1)] <- rep((((mat[[2]][i,k] - tc + 1) ^ (1/lag)) - 1), lag)
 
         lag <- 0
       }
