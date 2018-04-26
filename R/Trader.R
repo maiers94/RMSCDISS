@@ -21,6 +21,7 @@ trade.pairs <- function(data,testfun,scale=1,datalist="default",top=10,tradestar
     else{
       pairslist <- findpairs(datalist,data[1:(tradestart-1),],testfun,silent=silent,...)
     }
+
     #Find standard deviations for the top pairs:
     std <- vector(length=top)
     for(i in 1:top){
@@ -67,7 +68,7 @@ trade.pairs <- function(data,testfun,scale=1,datalist="default",top=10,tradestar
       if(prevdailypos[k] != 0){
         #if position was open
         prevpairdiff <- prevdaily[pairslist[k,1]]-prevdaily[pairslist[k,2]]
-        if(sign(pairdiff) == sign(prevpairdiff)){
+        if(sign(pairdiff) == prevdailypos[k]){
           #keep position open
           dailypos[k] <- prevdailypos[k]
         }
@@ -80,7 +81,7 @@ trade.pairs <- function(data,testfun,scale=1,datalist="default",top=10,tradestar
         #if position was closed
         if(abs(pairdiff) <= dev){
           #keep position closed
-          dailypos[k] <- 0
+          dailypos[k] <- prevdailypos[k]
         }
         else{
           #open position
@@ -240,12 +241,12 @@ summarise <- function(mat,interest,tc = 0, tradedays = 261){
     for(j in 1:k){
       s[j] <- (1+temp[[2]][j])/((1+interest[j]/100) ^ (1/tradedays))
       s[j] <- s[j]^(1-rho)
-      if(is.na(s[j])==T){
-        print(j)
-        print(i)
-        print(temp[[2]][j])
-        print(interest[j])
-      }
+      #if(is.na(s[j])==T){
+      #  print(j)
+      #  print(i)
+      #  print(temp[[2]][j])
+      #  print(interest[j])
+      #}
     }
     sp <- log(sum(s)/k)
     theta[i] <- (1/((1-rho)*(1/tradedays))) * sp
@@ -259,21 +260,21 @@ summarise <- function(mat,interest,tc = 0, tradedays = 261){
 
   #################################
   avg <- sum(rets)/n
-  print("AVERAGE RETURN:")
-  print(avg)
+  print("AVERAGE RETURN: (%)")
+  print(round(avg*100,4))
   #sd of retruns
-  print("STANDARD DEVIATION:")
-  print(sd(rets))
+  print("STANDARD DEVIATION: (%)")
+  print(round(sd(rets)*100,4))
   print("SHARPE RATIO:")
-  print((avg)/sd(rets))
-  print("MAX DRAWDOWN:")
-  print(maxdrawdown(rets)$maxdrawdown)
+  print(round((avg)/sd(rets),4))
+  print("MAX DRAWDOWN: (%)")
+  print(round(maxdrawdown(rets)$maxdrawdown*100,4))
   print("CALMAR(whole period):")
-  print(avg/maxdrawdown(rets)$maxdrawdown)
-  print("SORTINO:")
-  print((avg)/sd(rets[rets<0]))
-  print("AVG. MPPF (annualised):")
-  print(theta)
+  print(round(avg/maxdrawdown(rets)$maxdrawdown,4))
+  #print("SORTINO:")
+  #print((avg)/sd(rets[rets<0]))
+  print("AVG. MPPF (annualised): (%)")
+  print(round(theta*100,4))
   print("#################")
   print("No of Trades:")
   print(sum(mat[[2]]!=0))
@@ -307,7 +308,7 @@ compare.lists <- function(list1,list2){
 
 #'@export
 compound.returns.interest <- function(mat,sec,int,tc,tradedays = 261){
-  tc <- tc / 100
+  tc <- tc / 10000
   n <- length(mat[[2]][,1])
   k <- sec
   rets <- 1
@@ -319,7 +320,7 @@ compound.returns.interest <- function(mat,sec,int,tc,tradedays = 261){
     if(curpos != mat[[1]][(i+1),k]){
       if(mat[[1]][(i+1),k] == 0){
         traderet <- mat[[2]][(i),k]
-        rets <- rets*(1 + traderet - tc)
+        rets <- rets*(1 + traderet - 2*tc)
 
 
       }
@@ -333,7 +334,7 @@ compound.returns.interest <- function(mat,sec,int,tc,tradedays = 261){
     if(mat[[1]][(i+1),k] == 0){
       cont[i] <- (int[i]/(tradedays*100))
       if(lag != 0){
-        cont[(i-lag):(i-1)] <- rep((((mat[[2]][i,k] - tc + 1) ^ (1/lag)) - 1), lag)
+        cont[(i-lag):(i-1)] <- rep((((mat[[2]][i,k] - 2*tc + 1) ^ (1/lag)) - 1), lag)
 
         lag <- 0
       }
