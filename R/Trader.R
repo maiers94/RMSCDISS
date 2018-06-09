@@ -279,7 +279,8 @@ summarise <- function(mat,interest,tc = 0, tradedays = 261){
   print("No of Trades:")
   print(sum(mat[[2]]!=0))
   print("#################")
-
+  print("GATEV RETURNS (portfolio value weighterd average,compounded):")
+  print(round(gatevreturns(mat)*100,4))
   #hist(rets)
   return(rets)
 }
@@ -346,6 +347,27 @@ compound.returns.interest <- function(mat,sec,int,tc,tradedays = 261){
   }
 
   return(list((rets - 1),cont))
+}
+
+#'@export
+gatevreturns <- function(mat){
+  #tc <- tc / 10000
+  n <- length(mat[[2]][,1])
+  k <- length(mat[[2]][1,])
+  w <- rep(1,k)
+  rp <- vector(length = n)
+  rp[1] <- sum(mat[[2]][1,])/k
+  for(t in 2:n){
+    rpcur <- rep(0,k)
+    for(i in 1:k){
+      w[i] <- w[i]*(1 + mat[[2]][(t-1),i])
+      rpcur[i] <- w[i]*mat[[2]][t,i]
+    }
+    rp[t] <- sum(rpcur)/sum(w)
+  }
+  rp <- rp + 1
+  rp <- prod(rp) - 1
+  return(rp)
 }
 
 #'@export
