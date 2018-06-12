@@ -225,7 +225,7 @@ compound.returns <- function(mat,sec){
 #'@export
 #'@import tseries
 #'@import graphics
-summarise <- function(mat,interest,tc = 0, tradedays = 261){
+summarise <- function(mat,interest,periods,rf=0,tc = 19.73, tradedays = 261){
   #average daily returns on open positions
   n <- ncol(mat[[1]])
   rets <- vector(length=n)
@@ -254,23 +254,23 @@ summarise <- function(mat,interest,tc = 0, tradedays = 261){
 
   theta <- mean(theta)
 
-
-
-
-
   #################################
-  avg <- sum(rets)/n
+
+  retsa <- (rets+1)^(1/periods) - 1
+  avg <- sum(retsa)/n
+  #avg <- (avg+1)^(1/periods) - 1
+  std <- sd(retsa)
   print("AVERAGE RETURN: (%)")
   print(round(avg*100,4))
   #sd of retruns
   print("STANDARD DEVIATION: (%)")
-  print(round(sd(rets)*100,4))
+  print(round(std*100,4))
   print("SHARPE RATIO:")
-  print(round((avg)/sd(rets),4))
+  print(round((avg-rf/100)/std,4))
   print("MAX DRAWDOWN: (%)")
-  print(round(maxdrawdown(rets)$maxdrawdown*100,4))
+  print(round(mdd(mat)*100,4))
   print("CALMAR(whole period):")
-  print(round(avg/maxdrawdown(rets)$maxdrawdown,4))
+  print(round(avg/mdd(mat),4))
   #print("SORTINO:")
   #print((avg)/sd(rets[rets<0]))
   print("AVG. MPPF (annualised): (%)")
@@ -285,6 +285,14 @@ summarise <- function(mat,interest,tc = 0, tradedays = 261){
   return(rets)
 }
 
+#'@export
+mdd <- function(mat){
+  dds <- rep(0,ncol(mat[[2]]))
+  for(i in 1:ncol(mat[[2]])){
+    dds[i] <- maxdrawdown(mat[[2]][,i])$maxdrawdown
+  }
+  return(mean(dds))
+}
 
 
 #'@export
@@ -379,6 +387,9 @@ optimise.param <- function(tops=25,data,reps,start,jump){
   }
   return(param)
 }
+
+
+
 
 
 #####################################################################
